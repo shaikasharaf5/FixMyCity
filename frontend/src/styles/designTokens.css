@@ -1,0 +1,64 @@
+/* designTokens.css – Design system variables and dark mode */
+:root {
+  /* Primary palette (HSL) */
+  --color-primary-h: 210; /* Indigo */
+  --color-primary-s: 70%;
+  --color-primary-l: 55%;
+  --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+
+  --color-secondary-h: 158; /* Teal */
+  --color-secondary-s: 65%;
+  --color-secondary-l: 45%;
+  --color-secondary: hsl(var(--color-secondary-h), var(--color-secondary-s), var(--color-secondary-l));
+
+  --color-accent-h: 340; /* Pink */
+  --color-accent-s: 70%;
+  --color-accent-l: 55%;
+  --color-accent: hsl(var(--color-accent-h), var(--color-accent-s), var(--color-accent-l));
+
+  /* Backgrounds */
+  --bg-primary: #0f172a; /* slate‑900 */
+  --bg-secondary: #1e293b; /* slate‑800 */
+  --bg-glass: rgba(255, 255, 255, 0.08);
+  --bg-glass-dark: rgba(0, 0, 0, 0.45);
+
+  /* Text */
+  --text-primary: #e2e8f0; /* slate‑200 */
+  --text-secondary: #94a3b8; /* slate‑400 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-glass: rgba(255, 255, 255, 0.08);
+    --bg-glass-dark: rgba(0, 0, 0, 0.45);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+  }
+}
+
+/* Helper utilities */
+.glass-bg {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-bg-dark {
+  background: var(--bg-glass-dark);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.transition-fast {
+  transition: all 0.2s ease-in-out;
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}

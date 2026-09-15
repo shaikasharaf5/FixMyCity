@@ -1,0 +1,44 @@
+# Credentials and machine-local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Runtime data, citizen evidence, and recovery snapshots
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+backend/uploads/
+backend/backups/
+
+# Downloaded model weights and local dependencies
+*.pt
+*.pth
+*.safetensors
+venv/
+.venv/
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.cache/
+
+# Build and test outputs
+dist/
+dist-ssr/
+test-results/
+playwright-report/
+*.tsbuildinfo
+*.log
+
+# Personal tooling and editor state
+.impeccable/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

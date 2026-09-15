@@ -1,0 +1,2 @@
+# Recovery snapshots contain application data; never commit them.
+backups/

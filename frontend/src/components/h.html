@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Maps API Test</title>
+    <style>
+        #map {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Google Maps API Test</h2>
+
+<div id="map"></div>
+
+<script>
+function initMap() {
+    // Hyderabad
+    const location = {
+        lat: 17.3850,
+        lng: 78.4867
+    };
+
+    const map = new google.maps.Map(
+        document.getElementById("map"),
+        {
+            zoom: 12,
+            center: location
+        }
+    );
+
+    new google.maps.Marker({
+        position: location,
+        map: map
+    });
+}
+</script>
+
+<script
+    async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDPrJsx1qkMrAvYwkMMT6Gs6YMWarej_gs&callback=initMap">
+</script>
+
+</body>
+</html>

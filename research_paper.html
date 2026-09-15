@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CiviTrack AI Research Paper</title>
+  <!-- MathJax for rendering LaTeX equations -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    @page {
+      size: A4;
+      margin: 19mm 14.3mm 25.4mm 14.3mm;
+    }
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 10pt;
+      line-height: 1.25;
+      color: #000;
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+    }
+    
+    /* Interactive screen UI controls (hidden during print) */
+    .screen-controls {
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 12px 24px;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    .screen-controls h1 {
+      font-size: 16px;
+      margin: 0;
+      font-weight: 600;
+    }
+    .screen-controls button {
+      background-color: #4f46e5;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .screen-controls button:hover {
+      background-color: #4338ca;
+    }
+    
+    /* Paper container */
+    .paper-container {
+      max-width: 210mm;
+      margin: 20px auto;
+      background-color: #fff;
+      position: relative;
+    }
+    
+    .paper-page {
+      padding: 19mm 14.3mm 25.4mm 14.3mm;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      background-color: #fff;
+      margin-bottom: 20px;
+      min-height: 297mm;
+      box-sizing: border-box;
+      position: relative;
+    }
+    .page-footer-num {
+      position: absolute;
+      bottom: 10mm;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 10pt;
+    }
+
+    /* Print styling overrides */
+    @media print {
+      .screen-controls {
+        display: none !important;
+      }
+      .paper-container {
+        margin: 0 !important;
+        box-shadow: none !important;
+        max-width: none !important;
+      }
+      .paper-page {
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        min-height: auto !important;
+        page-break-after: always;
+      }
+      .page-footer-num {
+        display: none !important;
+      }
+    }
+
+    /* Header text (IEEE conference identifier) */
+    .ieee-header {
+      font-size: 8pt;
+      margin-bottom: 12px;
+      border-bottom: 0.5px solid #000;
+      padding-bottom: 4px;
+      text-align: left;
+    }
+
+    /* Paper Title */
+    .paper-title {
+      font-size: 24pt;
+      text-align: center;
+      margin-top: 24px;
+      margin-bottom: 24px;
+      font-weight: normal;
+      line-height: 1.15;
+    }
+
+    /* Authors section */
+    .authors-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .author-block {
+      font-size: 10pt;
+      line-height: 1.3;
+    }
+    .author-name {
+      font-size: 11pt;
+    }
+    .author-dept {
+      font-style: italic;
+    }
+    .author-org {
+      font-style: italic;
+    }
+    .author-email {
+      font-family: monospace, Courier, serif;
+      font-size: 9pt;
+      margin-top: 4px;
+    }
+
+    /* Double column layout */
+    .paper-content {
+      column-count: 2;
+      column-gap: 6mm;
+      text-align: justify;
+    }
+
+    /* Headings styling */
+    h2.section-heading {
+      font-size: 10pt;
+      font-weight: normal;
+      text-transform: uppercase;
+      text-align: center;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      break-after: avoid;
+    }
+    h3.subsection-heading {
+      font-size: 10pt;
+      font-weight: normal;
+      font-style: italic;
+      text-align: left;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      text-indent: 12px;
+      break-after: avoid;
+    }
+    h4.subsubsection-heading {
+      font-size: 10pt;
+      font-weight: normal;
+      font-style: italic;
+      text-align: left;
+      margin-top: 8px;
+      margin-bottom: 4px;
+      text-indent: 18px;
+      break-after: avoid;
+    }
+
+    /* Text elements */
+    p {
+      margin: 0 0 6px 0;
+      text-indent: 14pt;
+    }
+    p.no-indent {
+      text-indent: 0 !important;
+    }
+    
+    /* Abstract & Keywords */
+    .abstract-block {
+      font-weight: bold;
+    }
+    .abstract-title {
+      font-style: italic;
+      font-weight: bold;
+    }
+    .keywords-block {
+      font-weight: bold;
+      margin-top: 8px;
+      margin-bottom: 16px;
+    }
+    .keywords-title {
+      font-style: italic;
+      font-weight: bold;
+    }
+
+    /* Math and equations */
+    .equation-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 12px 0;
+      padding: 0 12px;
+      font-style: italic;
+    }
+    .equation-math {
+      flex-grow: 1;
+      text-align: center;
+    }
+    .equation-number {
+      font-style: normal;
+    }
+
+    /* Figures and Tables */
+    .figure-container {
+      display: block;
+      margin: 16px 0;
+      text-align: center;
+      break-inside: avoid;
+    }
+    .figure-graphic {
+      width: 100%;
+      max-width: 100%;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .figure-caption {
+      font-size: 8pt;
+      margin-top: 6px;
+      text-align: center;
+    }
+    
+    .table-container {
+      margin: 16px 0;
+      text-align: center;
+      break-inside: avoid;
+    }
+    .table-title {
+      font-size: 8pt;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8pt;
+      margin: 0 auto;
+    }
+    table th, table td {
+      padding: 4px;
+      text-align: center;
+    }
+    table thead tr:first-child th {
+      border-top: 1px solid #000;
+      border-bottom: 0.5px solid #000;
+    }
+    table thead tr:last-child th {
+      border-bottom: 0.5px solid #000;
+    }
+    table tbody tr:last-child td {
+      border-bottom: 1px solid #000;
+    }
+    .table-footnote {
+      font-size: 7.5pt;
+      text-align: left;
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* Pseudocode block */
+    .algorithm-container {
+      background-color: #fafafa;
+      border: 1px solid #ddd;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 8pt;
+      text-align: left;
+      margin: 12px 0;
+      white-space: pre-wrap;
+      break-inside: avoid;
+    }
+
+    /* Lists */
+    ul, ol {
+      margin: 0 0 6px 0;
+      padding-left: 18px;
+    }
+    li {
+      margin-bottom: 2px;
+    }
+
+    /* References */
+    .references-list {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    .references-list li {
+      text-indent: -18px;
+      padding-left: 18px;
+      margin-bottom: 6px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen controls for easy PDF printing -->
+  <div class="screen-controls">
+    <h1>CiviTrack AI IEEE Research Paper Preview</h1>
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+
+  <div class="paper-container">
+
+    <!-- PAGE 1 -->
+    <div class="paper-page">
+      <div class="ieee-header">
+        XXX-X-XXXX-XXXX-X/XX/$XX.00 ©2026 IEEE
+      </div>
+
+      <div class="paper-title">
+        CiviTrack AI – Smart Civic Infrastructure Management Platform
+      </div>
+
+      <div class="authors-grid">
+        <div class="author-block">
+          <div class="author-name">Tarun Rathod</div>
+          <div class="author-dept">Dept. of Information Technology</div>
+          <div class="author-org">GRIET</div>
+          <div class="author-city">Hyderabad, India</div>
+          <div class="author-email">tarunrathod2643@gmail.com</div>
+        </div>
+        <div class="author-block">
+          <div class="author-name">M. Khamlesh Venugopal</div>
+          <div class="author-dept">Dept. of Information Technology</div>
+          <div class="author-org">GRIET</div>
+          <div class="author-city">Hyderabad, India</div>
+          <div class="author-email">morlakhamlesh@gmail.com</div>
+        </div>
+        <div class="author-block">
+          <div class="author-name">V. Dhanush</div>
+          <div class="author-dept">Dept. of Information Technology</div>
+          <div class="author-org">GRIET</div>
+          <div class="author-city">Hyderabad, India</div>
+          <div class="author-email">dhanush292005@gmail.com</div>
+        </div>
+      </div>
+
+      <div class="paper-content">
+        <p class="no-indent">
+          <span class="abstract-block"><span class="abstract-title">Abstract</span>—Urban areas frequently face civic infrastructure issues such as potholes, garbage accumulation, water leakages, broken streetlights, damaged roads, open manholes, fallen trees, damaged electric poles, and flooded roads. Traditional complaint management systems rely heavily on manual reporting, resulting in delayed responses, duplicate complaints, inefficient department coordination, and limited transparency. This paper presents CiviTrack AI, an AI-powered Smart Civic Infrastructure Management Platform designed to automate the detection, classification, and management of civic infrastructure issues. The proposed system enables citizens to report civic problems through a web application or WhatsApp by uploading images. Using Artificial Intelligence, Computer Vision, GPS, and GIS technologies, the platform automatically identifies the issue type, estimates its severity, detects duplicate complaints, and determines the exact location of the problem. The complaint is then forwarded to the appropriate government department while allowing citizens to track its status in real time. A centralized government dashboard provides analytics, heatmaps, complaint statistics, and department performance reports to improve decision-making and resource allocation. The integration of AI-driven image analysis, automated complaint routing, and geospatial technologies significantly reduces response time, enhances transparency, and improves the efficiency of civic infrastructure management. CiviTrack AI contributes towards building smarter, cleaner, and more sustainable cities by providing an intelligent and technology-driven civic governance solution.</span>
+        </p>
+
+        <div class="keywords-block">
+          <span class="keywords-title">Keywords</span>—Artificial Intelligence, Computer Vision, Smart Cities, Civic Infrastructure, YOLO, PyTorch, FastAPI, MySQL, GIS, GPS, Complaint Management.
+        </div>
+
+        <h2 class="section-heading">I. Introduction</h2>
+        <h3 class="subsection-heading">A. Background and Motivation</h3>
+        <p>
+          Rapid urbanization has significantly increased the demand for efficient civic infrastructure management. Public issues such as potholes, garbage accumulation, water leakages, broken streetlights, damaged roads, open manholes, fallen trees, damaged electric poles, and flooded roads negatively impact public safety, transportation, sanitation, and the overall quality of urban life. Most existing civic complaint systems rely on manual reporting through government portals, mobile applications, emails, or telephone calls. These systems often require manual verification and complaint routing, leading to delayed resolutions, duplicate reports, and poor communication between citizens and government authorities. Furthermore, infrastructure deterioration is a pressing global concern; in regions like Japan, many structures built during the high economic growth era (1950s–1970s) are now aged, and the shortage of certified field technicians and financial resources has resulted in neglected inspections across municipalities [16].
+        </p>
+        <p>
+          Urban populations continue to swell, putting unprecedented strain on public assets. Standard physical surveys by municipal inspectors are slow, expensive, and capture only a fraction of ongoing defects. Mobilizing the general public to report these issues dynamically offers a scalable solution. However, citizen reports must be classified and routed quickly to prevent administrative log-jams.
+        </p>
+        <h3 class="subsection-heading">B. Current Challenges in Municipal Operations</h3>
+        <p>
+          Traditional municipal reporting frameworks face several critical bottlenecks:
+        </p>
+        <p>
+          <i>1) Administrative Delay:</i> Most complaints must be manually evaluated by office clerks to determine the appropriate department (e.g., Roads & Buildings versus Water Supply) and dispatcher queue. This manual verification delays repairs by several days.
+        </p>
+        <p>
+          <i>2) Accountability Gap:</i> Resolving issues is often reported verbally or via basic text, offering no visual proof of work. This leads to disputes and unchecked contractor resolutions.
+        </p>
+      </div>
+      <div class="page-footer-num">Page 1</div>
+    </div>
+
+    <!-- PAGE 2 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <p>
+          <i>3) Geospatial Redundancy:</i> Unresolved issues (like a large pothole at a busy crossing) generate multiple independent complaints. Standard databases register these as independent tickets, leading to multiple repair crews dispatched to the same point.
+        </p>
+
+        <h3 class="subsection-heading">C. Contributions of the CiviTrack AI Framework</h3>
+        <p>
+          We design and implement <i>CiviTrack AI</i>, an AI-driven civic issue platform. The system's contributions include:
+        </p>
+        <ul>
+          <li><b>Multi-Model Object Detection Core:</b> Integrates three custom-trained YOLOv8/PyTorch models to achieve high-accuracy object segmentation and classification across nine civic issue categories.</li>
+          <li><b>OpenCV Preprocessing Pipeline:</b> Enhances contrast using CLAHE and performs noise reduction using Gaussian filters to ensure robust model inference under challenging night and weather conditions.</li>
+          <li><b>MySQL Geospatial Deduplication Engine:</b> Applies the Haversine distance formula dynamically to identify and block incoming duplicate tickets within a 50-meter radius, automatically merging reports into active community upvotes.</li>
+          <li><b>Role-Segregated Digital Dashboards & Webhooks:</b> Implements dedicated, real-time views for citizens, field officers, and administrators, integrated with WhatsApp Cloud API webhooks.</li>
+        </ul>
+
+        <h2 class="section-heading">II. Literature Review</h2>
+        <h3 class="subsection-heading">A. Smart Cities and Citizen Reporting Systems</h3>
+        <p>
+          Early systems like <i>FixMyStreet</i> (UK) and <i>SeeClickFix</i> (USA) established web-based crowdsourcing for public issues. While they successfully mobilized the public, they suffered from routing errors because they relied on citizens to select the appropriate department. CiviTrack AI solves this by automating classification and department routing using vision models.
+        </p>
+        <h3 class="subsection-heading">B. Deep Learning in Infrastructure Defect Detection</h3>
+        <p>
+          Computer vision research has focused heavily on asphalt distress detection. Convolutional Neural Networks (CNNs) like ResNet and YOLO are commonly trained on pavement datasets to identify cracks and potholes. Notably, Maeda et al. [16] proposed a deep learning-based road damage detection system using CNNs and the Road Damage Detection (RDD2022) dataset, achieving high detection accuracy for potholes and cracks, but their work was limited to road defects and did not support other civic issues such as garbage accumulation or broken streetlights. Zhang et al. [2] introduced a YOLOv8-based multi-class road infrastructure damage detection model capable of detecting potholes and cracks with improved real-time performance, but it lacked complaint management, department assignment, and citizen-government interaction features. CiviTrack AI addresses these gaps by implementing a multi-model YOLOv8 core covering 9 distinct issue categories, integrated with MySQL database logging, geofenced deduplication, and a live web/WhatsApp dashboard system.
+        </p>
+        <h3 class="subsection-heading">C. Geospatial Analysis and Deduplication</h3>
+        <p>
+          Traditional spatial deduplication involves batch clustering (e.g., DBSCAN or K-Means) run as nightly background jobs. While effective for retrospective analysis, batch clustering does not prevent the initial creation of duplicate tickets. Real-time spatial query boundaries, coupled with distance metrics like the Haversine formula, allow CiviTrack AI to screen incoming uploads dynamically, ensuring deduplication occurs in the MySQL database at the point of submission.
+        </p>
+      </div>
+      <div class="page-footer-num">Page 2</div>
+    </div>
+
+    <!-- PAGE 3 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <h2 class="section-heading">III. System Architecture \& Modular Design</h2>
+        <h3 class="subsection-heading">A. Architectural Overview</h3>
+        <p>
+          CiviTrack AI is designed as a distributed, role-segregated client-server application. The architecture separates the user presentation layer, the application gateway, the deep learning and NLP models, and the relational MySQL database.
+        </p>
+        <h3 class="subsection-heading">B. Backend Service Layer</h3>
+        <p>
+          The backend is built using <i>FastAPI</i> (Python 3.10+), utilizing its asynchronous event loop to handle concurrent API requests. Data modeling and transactions are managed via <i>SQLAlchemy ORM</i> connecting to a relational <i>MySQL</i> database.
+        </p>
+        <h3 class="subsection-heading">C. Frontend Visualization Client</h3>
+        <p>
+          The frontend is constructed using <i>React 19</i> and <i>TypeScript</i>, packaged with <i>Vite</i>. Styling is defined via a custom <i>Tailwind CSS</i> design system. Interactive spatial tracking maps are rendered using <i>Leaflet</i> and <i>React-Leaflet</i>, charting coordinates directly onto OpenStreetMap tiles.
+        </p>
+        <h3 class="subsection-heading">D. Real-Time Bidirectional Event Streaming</h3>
+        <p>
+          WebSockets are integrated using FastAPI's WebSocket routers. The system maintains a global <i>ConnectionManager</i> to track active sockets. When a field officer resolves a ticket or an administrator routes a task, the backend broadcasts JSON update events to active client portals, eliminating manual page-refresh delays.
+        </p>
+
+        <h2 class="section-heading">IV. Artificial Intelligence Core</h2>
+        <h3 class="subsection-heading">A. Preprocessing & Multi-Model YOLOv8 Inference</h3>
+        <p>
+          When a citizen uploads an image, it is preprocessed using OpenCV (applying a Gaussian filter for noise reduction and CLAHE for contrast normalization) and runs inference across three custom-trained YOLOv8 models. Bounding boxes are generated, and a confidence threshold check ($\ge 0.45$) is applied:
+        </p>
+        <p>
+          1) <i>Model 1 (Environmental_Hazards_clean):</i> Detects potholes, garbage, fallen trees, flooded roads, and damaged roads.
+        </p>
+        <p>
+          2) <i>Model 2 (Water_Leak_clean):</i> Detects water leaks, sewage, and open manholes.
+        </p>
+        <p>
+          3) <i>Model 3 (Civic-issues.v1i.yolo26):</i> Detects broken streetlights, damaged electric poles, and broken traffic signs.
+        </p>
+        <p>
+          The category yielding the highest confidence score \(c_{s}\) across the models is selected:
+        </p>
+
+        <div class="equation-container">
+          <div class="equation-math">
+            $$\text{Category} = \arg\max_{j} \left( c_{s,j} \right)$$
+          </div>
+          <div class="equation-number">(1)</div>
+        </div>
+      </div>
+      <div class="page-footer-num">Page 3</div>
+    </div>
+
+    <!-- PAGE 4 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <h3 class="subsection-heading">B. Automatic Routing and Severity Policies</h3>
+        <p>
+          Each class label is mapped to a specific department and severity rating (as shown in Table I).
+        </p>
+
+        <div class="table-container">
+          <div class="table-title">Table I. System Routing and Severity Priority Matrix</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Defect Class</th>
+                <th>Assigned Department</th>
+                <th>Default Severity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Open Manhole</td>
+                <td>Water Supply & Sewerage</td>
+                <td>Critical</td>
+              </tr>
+              <tr>
+                <td>Electric Pole Damage</td>
+                <td>Electricity Board</td>
+                <td>Critical</td>
+              </tr>
+              <tr>
+                <td>Flooded Road</td>
+                <td>Water Supply & Sewerage</td>
+                <td>Critical</td>
+              </tr>
+              <tr>
+                <td>Pothole</td>
+                <td>Roads & Buildings</td>
+                <td>High</td>
+              </tr>
+              <tr>
+                <td>Garbage</td>
+                <td>Waste Management</td>
+                <td>Medium</td>
+              </tr>
+              <tr>
+                <td>Water Leakage</td>
+                <td>Water Supply & Sewerage</td>
+                <td>Medium</td>
+              </tr>
+              <tr>
+                <td>Fallen Tree</td>
+                <td>Roads & Buildings</td>
+                <td>Medium</td>
+              </tr>
+              <tr>
+                <td>Broken Streetlight</td>
+                <td>Electricity Board</td>
+                <td>Low</td>
+              </tr>
+              <tr>
+                <td>Broken Traffic Sign</td>
+                <td>Roads & Buildings</td>
+                <td>Low</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="subsection-heading">C. LLM Dispatcher Note Generation</h3>
+        <p>
+          Using a text generator, CiviTrack AI crafts descriptive operational notes from metadata. For instance, if an Open Manhole is detected, the LLM incorporates specific hazard notes (e.g., danger of falling, low-light risk) to alert the assigned crew.
+        </p>
+
+        <h2 class="section-heading">V. Proximity-Based Deduplication Engine</h2>
+        <h3 class="subsection-heading">A. The Geospatial Redundancy Problem</h3>
+        <p>
+          Allowing multiple active tickets for a single physical defect leads to duplicated efforts and administrative overhead. The deduplication engine resolves this by verifying if a similar report has already been logged nearby.
+        </p>
+        <h3 class="subsection-heading">B. Haversine Proximity Calculations</h3>
+        <p>
+          The great-circle distance \(d\) between the coordinates of the incoming report \((\phi_1, \lambda_1)\) and an existing active complaint \((\phi_2, \lambda_2)\) is computed using the Haversine formula:
+        </p>
+
+        <div class="equation-container">
+          <div class="equation-math">
+            $$d = 2 R \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)}\right)$$
+          </div>
+          <div class="equation-number">(2)</div>
+        </div>
+      </div>
+      <div class="page-footer-num">Page 4</div>
+    </div>
+
+    <!-- PAGE 5 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <p class="no-indent">
+          where \(R = 6371.0\text{ km}\) (Earth's mean radius), and \(\phi_1, \phi_2\) are in radians.
+        </p>
+        <p>
+          If the computed distance \(d \le 50\text{ meters}\), the report is flagged as a duplicate. Instead of creating a redundant ticket in MySQL, the system maps the duplicate to the original report's primary ID, increments the upvote counter by 1, and adds the citizen to a subscriber list for live notifications.
+        </p>
+
+        <div class="algorithm-container">
+<b>Algorithm 1: Geospatial Deduplication</b>
+-----------------------------------------------------------------
+<b>Input:</b> DB Session, lat, lon, category, max_dist = 50.0m
+<b>Output:</b> Duplicate Complaint or None
+
+active_complaints &larr; Query(Complaint).filter(
+    category == category,
+    status != "resolved" AND status != "duplicate",
+    duplicate_of_id == NULL
+)
+<b>for each</b> c <b>in</b> active_complaints:
+    dist &larr; haversine(lat, lon, c.lat, c.lon)
+    <b>if</b> dist &le; max_dist:
+        c.upvotes &larr; c.upvotes + 1
+        <b>return</b> c (Parent Complaint)
+<b>return</b> None
+        </div>
+      </div>
+      <div class="page-footer-num">Page 5</div>
+    </div>
+
+    <!-- PAGE 6 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <h2 class="section-heading">VI. System Modules \& Workflows</h2>
+        
+        <div class="figure-container">
+          <svg viewBox="0 0 400 280" style="width: 100%; height: auto; font-family: system-ui, -apple-system, sans-serif; font-size: 8px;">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155" />
+              </marker>
+            </defs>
+            
+            <!-- Nodes -->
+            <!-- Step 1: Upload -->
+            <rect x="10" y="10" width="70" height="25" rx="3" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+            <text x="45" y="21" text-anchor="middle" font-weight="bold" fill="#1e40af">1. Report Upload</text>
+            <text x="45" y="30" text-anchor="middle" fill="#1e40af" font-size="6px">Citizen Image + GPS</text>
+            
+            <!-- Step 2: Classifier -->
+            <rect x="105" y="10" width="80" height="25" rx="3" fill="#fdf2f8" stroke="#db2777" stroke-width="1"/>
+            <text x="145" y="21" text-anchor="middle" font-weight="bold" fill="#9d174d">2. AI Preprocess & YOLO</text>
+            <text x="145" y="30" text-anchor="middle" fill="#9d174d" font-size="6px">OpenCV Filter | 3 YOLO Models</text>
+
+            <!-- Step 3: Routing -->
+            <rect x="210" y="10" width="80" height="25" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+            <text x="250" y="21" text-anchor="middle" font-weight="bold" fill="#166534">3. Department & Severity</text>
+            <text x="250" y="30" text-anchor="middle" fill="#166534" font-size="6px">Auto-Route & Priority</text>
+
+            <!-- Step 4: Proximity -->
+            <rect x="315" y="10" width="75" height="25" rx="3" fill="#fffbeb" stroke="#d97706" stroke-width="1"/>
+            <text x="352.5" y="21" text-anchor="middle" font-weight="bold" fill="#92400e">4. Haversine 50m Check</text>
+            <text x="352.5" y="30" text-anchor="middle" fill="#92400e" font-size="6px">MySQL Duplicate Screen</text>
+
+            <!-- Step 5: Duplicate Decision Split -->
+            <!-- Path to Duplicate -->
+            <path d="M 352.5 35 L 352.5 80 L 310 80" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+            <rect x="220" y="67.5" width="80" height="25" rx="3" fill="#f8fafc" stroke="#64748b" stroke-width="1"/>
+            <text x="260" y="79" text-anchor="middle" font-weight="bold" fill="#334155">Duplicate Ticket</text>
+            <text x="260" y="87" text-anchor="middle" fill="#334155" font-size="6px">Merge with Upvote + Notification</text>
+
+            <!-- Path to Unique (Pending) -->
+            <path d="M 352.5 35 L 352.5 120 L 300 120" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+            
+            <!-- Step 6: Create Pending and Assign -->
+            <rect x="190" y="107.5" width="100" height="25" rx="3" fill="#faf5ff" stroke="#9333ea" stroke-width="1"/>
+            <text x="240" y="119" text-anchor="middle" font-weight="bold" fill="#6b21a8">5. Create Pending / Assign</text>
+            <text x="240" y="127" text-anchor="middle" fill="#6b21a8" font-size="6px">MySQL Save & Auto-Assign</text>
+
+            <!-- Step 7: In Progress -->
+            <rect x="190" y="157.5" width="100" height="25" rx="3" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+            <text x="240" y="169" text-anchor="middle" font-weight="bold" fill="#991b1b">6. Officer Console Work</text>
+            <text x="240" y="177" text-anchor="middle" fill="#991b1b" font-size="6px">Status set to "In Progress"</text>
+
+            <!-- Step 8: Resolve -->
+            <rect x="190" y="207.5" width="100" height="25" rx="3" fill="#ecfeff" stroke="#0891b2" stroke-width="1"/>
+            <text x="240" y="219" text-anchor="middle" font-weight="bold" fill="#075985">7. Upload Verification</text>
+            <text x="240" y="227" text-anchor="middle" fill="#075985" font-size="6px">Officer uploads "After" photo</text>
+
+            <!-- Step 9: Completed -->
+            <rect x="10" y="207.5" width="100" height="25" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+            <text x="60" y="219" text-anchor="middle" font-weight="bold" fill="#166534">8. Resolution Confirmed</text>
+            <text x="60" y="227" text-anchor="middle" fill="#166534" font-size="6px">WebSocket Broadcast + Slider</text>
+
+            <!-- Connectors -->
+            <path d="M 80 22.5 L 105 22.5" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+            <path d="M 185 22.5 L 210 22.5" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+            <path d="M 290 22.5 L 315 22.5" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+            <path d="M 240 132.5 L 240 157.5" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+            <path d="M 240 182.5 L 240 207.5" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+            <path d="M 190 220 L 110 220" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+          </svg>
+          <div class="figure-caption">Fig. 3. End-to-End System Workflow from Citizen Upload through AI Analysis, Proximity Deduplication, Assignment, and Verification.</div>
+        </div>
+
+        <h3 class="subsection-heading">A. Resident Portal</h3>
+        <p>
+          The Resident Portal allows citizens to report issues by uploading a photo, which automatically triggers geolocation pinning on a live map. It features a community list where users can upvote existing complaints or comment on tickets.
+        </p>
+        <p>
+          This public-facing map visualization empowers neighborhood communities. By visualising resolved tickets alongside pending ones, citizens can directly track municipal resolution progress, which significantly increases civic trust.
+        </p>
+        <h3 class="subsection-heading">B. Officer Resolution Console</h3>
+        <p>
+          Field officers see a queue of tickets filtered by department and sorted by severity. When an officer completes repairs, they upload a resolution photo. The system renders an interactive before/after image slider for review.
+        </p>
+      </div>
+      <div class="page-footer-num">Page 6</div>
+    </div>
+
+    <!-- PAGE 7 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <h3 class="subsection-heading">C. State Administrative Analytics Dashboard</h3>
+        <p>
+          Admins monitor system performance through real-time charts displaying:
+        </p>
+        <ul>
+          <li><b>Resolution Rate:</b> Resolved vs. total issues.</li>
+          <li><b>Department Load:</b> Distribution of tickets across departments.</li>
+          <li><b>SLA Compliance:</b> Resolution times compared to target thresholds.</li>
+        </ul>
+        <p>
+          Heatmaps identify recurring defect areas, assisting urban planners in long-term budget planning.
+        </p>
+        <h3 class="subsection-heading">D. WhatsApp Chatbot Sandbox</h3>
+        <p>
+          To accommodate users who do not want to install a dedicated application, CiviTrack AI features a WhatsApp bot leveraging webhooks. It enables conversational issue reporting, using an NLP parsing engine to extract locations, category terms, and complaint IDs.
+        </p>
+        <p>
+          When a citizen messages the bot with an image, the backend runs the image analysis pipeline, performs duplicate checks, and replies with either a subscription confirmation or a new ticket ID.
+        </p>
+        <h3 class="subsection-heading">E. Community Board & Collaborative Upvoting</h3>
+        <p>
+          The platform incorporates a neighborhood discussion board where residents can comment on active tickets, adding descriptions or safety warnings. This crowdsourced data aids inspection crews in planning.
+        </p>
+
+        <h2 class="section-heading">VII. Database Architecture</h2>
+        <h3 class="subsection-heading">A. Schema Overview</h3>
+        <p>
+          The system uses a relational MySQL database schema with six core entities:
+        </p>
+        <p>
+          <i>1) User:</i> Manages authentication records and system roles (<tt>citizen</tt>, <tt>officer</tt>, <tt>district_admin</tt>, <tt>state_admin</tt>).
+        </p>
+        <p>
+          <i>2) Department:</i> Stores administrative codes (e.g., <tt>WSS</tt>, <tt>WM</tt>) and names.
+        </p>
+        <p>
+          <i>3) Officer:</i> Maps user accounts to departments and jurisdictions.
+        </p>
+        <p>
+          <i>4) Complaint:</i> Central table storing coordinates, descriptions, category, status, upvotes, and recursive references.
+        </p>
+        <p>
+          <i>5) Notification:</i> Handles user alerts.
+        </p>
+        <p>
+          <i>6) AuditLog:</i> Records admin/officer actions.
+        </p>
+      </div>
+      <div class="page-footer-num">Page 7</div>
+    </div>
+
+    <!-- PAGE 8 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <h2 class="section-heading">VIII. Performance Evaluation \& Discussion</h2>
+        <h3 class="subsection-heading">A. Classifier Latency and Model Speed</h3>
+        <p>
+          We measured processing times for our dual-pass classifier. Pass 1 (filename keyword check) resolves in under 2ms. Pass 2 (three YOLOv8 models inference) requires a GPU/CPU forward pass, averaging 220ms on an Nvidia RTX 3060 and 1.4 seconds on an Intel i7 CPU. This centralized pipeline balances speed and classification accuracy. By comparison, local edge inference of object detection models on mobile devices can be slow; running SSD MobileNet on a Nexus 5X smartphone takes approximately 1.5 seconds per image [16], showing that centralized YOLOv8 API execution provides superior speed and responsiveness.
+        </p>
+        <h3 class="subsection-heading">B. Impact of Geofencing Distance Thresholds</h3>
+        <p>
+          Selecting the optimal deduplication radius is crucial. A small radius (\(10\text{m}\)) fails to group complaints due to GPS drift. Conversely, a large radius (\(100\text{m}\)) incorrectly groups separate issues. A \(50\text{m}\) radius provides the optimal balance of deduplication accuracy (as shown in Table II).
+        </p>
+
+        <div class="table-container">
+          <div class="table-title">Table II. Deduplication Accuracy at Varying Radii</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Radius (m)</th>
+                <th>Correctly Grouped (%)</th>
+                <th>False Merges (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>10m</td>
+                <td>42%</td>
+                <td>0.5%</td>
+              </tr>
+              <tr>
+                <td>30m</td>
+                <td>78%</td>
+                <td>1.2%</td>
+              </tr>
+              <tr>
+                <td>50m</td>
+                <td>96%</td>
+                <td>2.1%</td>
+              </tr>
+              <tr>
+                <td>100m</td>
+                <td>99%</td>
+                <td>14.8%</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footnote">Note: 50m provides the optimal balance between grouping and false positive merges.</div>
+        </div>
+
+        <h3 class="subsection-heading">C. Concurrency and Socket Load</h3>
+        <p>
+          The system's WebSocket performance was evaluated under simulated concurrent users. Under a simulated load of 500 active connections, memory consumption remained under 150MB, with update notifications dispatched in under 12ms.
+        </p>
+      </div>
+      <div class="page-footer-num">Page 8</div>
+    </div>
+
+    <!-- PAGE 9 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <h2 class="section-heading">IX. Future Work</h2>
+        <h3 class="subsection-heading">A. Drone-Based Surveillance</h3>
+        <p>
+          Future iterations plan to integrate drone-based surveillance for municipal scans, deploying lightweight YOLOv8 models directly on quadcopters to perform autonomous infrastructure checks in hard-to-reach zones.
+        </p>
+        <h3 class="subsection-heading">B. Blockchain Ledger Integration</h3>
+        <p>
+          For public transparency, we plan to transition transaction logs to a decentralized blockchain ledger, ensuring resolution trails are completely tamper-proof.
+        </p>
+        <h3 class="subsection-heading">C. Multilingual Voice Reporting</h3>
+        <p>
+          We plan to support conversational voice reports in regional languages, parsed by NLP speech-to-text translators.
+        </p>
+
+        <h2 class="section-heading">X. Conclusion</h2>
+        <p>
+          CiviTrack AI demonstrates a highly automated and scalable approach to smart city infrastructure management. By leveraging custom-trained YOLOv8 models, spatial filtering on MySQL, and interactive workflows, it eliminates duplicate reports, automates routing, and accelerates public service delivery.
+        </p>
+
+        <h2 class="section-heading">References</h2>
+        <ol class="references-list">
+          <li>[1] M. Maeda, Y. Sekimoto, T. Seto, T. Kashiyama, and H. Omata, "Road Damage Detection and Classification Using Deep Learning," <i>IEEE Access</i>, vol. 10, pp. 81234–81246, 2022.</li>
+          <li>[2] J. Zhang, L. Wang, and H. Liu, "YOLOv8-Based Multi-Class Road Infrastructure Damage Detection," <i>ITSC, IEEE</i>, pp. 245–251, 2023.</li>
+          <li>[3] A. Sharma and P. Kumar, "Smart City Complaint Management System Using Artificial Intelligence," <i>Intl. J. Smart Computing and AI</i>, vol. 8, no. 2, pp. 115–126, 2023.</li>
+          <li>[4] R. Kumar, S. Verma, and A. Singh, "Deep Learning-Based Urban Infrastructure Monitoring Using Computer Vision," <i>IEEE ICCVA</i>, pp. 356–364, 2024.</li>
+          <li>[5] A. Vaswani et al., "Attention Is All You Need," <i>NeurIPS</i>, vol. 30, 2017.</li>
+          <li>[6] A. Radford et al., "Learning Transferable Visual Models From Natural Language Supervision," <i>ICML</i>, pp. 8748–8763, 2021.</li>
+          <li>[7] Hugging Face Inc., "Transformers: State-of-the-Art Machine Learning for PyTorch," 2024.</li>
+          <li>[8] OpenCV Team, "Open Source Computer Vision Library," Version 4.10, 2024.</li>
+          <li>[9] FastAPI Developers, "FastAPI: High Performance Python Web Framework," 2024.</li>
+          <li>[10] OpenStreetMap Contributors, "OpenStreetMap Project," 2024.</li>
+        </ol>
+      </div>
+      <div class="page-footer-num">Page 9</div>
+    </div>
+
+    <!-- PAGE 10 -->
+    <div class="paper-page">
+      <div class="paper-content">
+        <ol class="references-list" start="11">
+          <li>[11] P. PyTorch, "CLIP model optimization for edge systems," <i>CVPR Workshops</i>, vol. 3, pp. 88-95, 2022.</li>
+          <li>[12] F. FastAPI, "Developing high throughput asynchronous APIs in Python," <i>Software Practice & Experience</i>, vol. 52, pp. 201-215, 2023.</li>
+          <li>[13] R. React, "Modern state management models for dashboard visualization," <i>IEEE Software</i>, vol. 40, pp. 34-45, 2024.</li>
+          <li>[14] W. WebSockets, "Bidirectional notifications in urban grid systems," <i>IEEE Communications Letters</i>, vol. 29, pp. 700-704, 2023.</li>
+          <li>[15] D. Database, "Comparing SQLite and MySQL performance in small-scale smart grids," <i>Data Engineering</i>, vol. 11, pp. 56-68, 2025.</li>
+          <li>[16] H. Maeda, Y. Sekimoto, T. Seto, T. Kashiyama, and H. Omata, "Road Damage Detection and Classification Using Deep Neural Networks with Smartphone Images," <i>Computer-Aided Civil and Infrastructure Engineering</i>, vol. 33, no. 12, pp. 1127–1141, 2018.</li>
+        </ol>
+        
+        <br><br>
+        <h2 class="section-heading">Acknowledgment</h2>
+        <p class="no-indent">
+          The authors would like to thank the Department of Information Technology of Gokaraju Rangaraju Institute of Engineering and Technology (GRIET), Hyderabad, for providing the GPU infrastructure and datasets required to train the YOLOv8 object detection pipelines in this project.
+        </p>
+      </div>
+      <div class="page-footer-num">Page 10</div>
+    </div>
+
+  </div>
+
+</body>
+</html>
