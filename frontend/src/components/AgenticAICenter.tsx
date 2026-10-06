@@ -28,7 +28,7 @@ export const AgenticAICenter: React.FC = () => {
       
       <div className="mb-2">
         <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-          <Bot className="w-8 h-8 text-cyan-400" /> CiviTrack AI Agents
+          <Bot className="w-8 h-8 text-cyan-400" /> FixMyCity AI Agents
         </h1>
         <p className="text-cyan-400 font-medium text-lg mt-1">
           AI that doesn't just analyze problems. <span className="text-white">It takes action.</span>

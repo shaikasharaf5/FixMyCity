@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { DetectionPreview } from './DetectionPreview';
 
 type Location = { latitude: number; longitude: number; district: string; ward: string; place: string; accuracy?: number };
-export const CitizenPortal: React.FC<{ onNavigate?: (tab: string) => void; onOpenSimulator?: () => void }> = () => {
+export const CitizenPortal: React.FC<{ onNavigate?: (tab: string) => void; onOpenSimulator?: () => void }> = ({ onNavigate }) => {
   const { user } = useAuth();
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState('');
@@ -45,26 +45,32 @@ export const CitizenPortal: React.FC<{ onNavigate?: (tab: string) => void; onOpe
       return null;
     } finally { if (version === generation.current) setLocating(false); }
   };
-  const scan = async (file: File, point: Location, version: number) => {
+  const scan = async (file: File, point: Location | null, version: number) => {
     setScanning(true); setError('');
     try {
       const form = new FormData();
-      form.append('file', file); form.append('latitude', String(point.latitude)); form.append('longitude', String(point.longitude));
-      form.append('district', point.district || 'Location pending'); form.append('ward', point.ward || 'Place pending');
+      form.append('file', file);
+      if (point) {
+        form.append('latitude', String(point.latitude)); form.append('longitude', String(point.longitude));
+        form.append('district', point.district || 'Location pending'); form.append('ward', point.ward || 'Place pending');
+      }
       const result = await api.postFormData('/complaints/analyze', form);
       if (version === generation.current) setAnalysis(result);
+      return result;
     } catch { if (version === generation.current) setError('Image analysis failed. Please retry the scan.'); }
     finally { if (version === generation.current) setScanning(false); }
+    return null;
   };
   const startPhoto = async (file: File) => {
     const version = ++generation.current;
     setPhoto(file); setAnalysis(null); setLocation(null); setDescription(''); setError(''); setTicket(null); setScanning(false);
-    const point = await captureLocation(version);
-    if (point && version === generation.current) await scan(file, point, version);
+    const result = await scan(file, null, version);
+    const lowConfidence = !result || result.category === 'None' || result.confidence < 0.30;
+    if (!lowConfidence && version === generation.current) await captureLocation(version);
   };
   const detectLocation = async () => {
     const version = ++generation.current;
-    setAnalysis(null); setDescription(''); setLocation(null);
+    setLocation(null); setLocationError('');
     const point = await captureLocation(version);
     if (point && photo && version === generation.current) await scan(photo, point, version);
   };
@@ -75,13 +81,22 @@ export const CitizenPortal: React.FC<{ onNavigate?: (tab: string) => void; onOpe
       '. The image assessment indicates ' + analysis.severity + ' priority. Please inspect the site and route the required work to ' + analysis.department?.name + '.');
   };
   const submit = async () => {
-    if (!analysis || !location || !location.district.trim() || !location.ward.trim()) return;
+    const lowConfidence = analysis?.category === 'None' || analysis?.confidence < 0.30;
+    if (!analysis || !location || !location.district.trim() || !location.ward.trim() || (lowConfidence && !description.trim())) return;
     setSubmitting(true); setError('');
     try {
-      const result = await api.post('/complaints', { category: analysis.category, description: description.trim() || null,
+      const result = await api.post('/complaints', { category: analysis.category === 'None' ? 'Unclassified Civic Issue' : analysis.category, description: description.trim() || null,
         latitude: location.latitude, longitude: location.longitude, district: location.district.trim(), ward: location.ward.trim(), before_image_url: analysis.before_image_url });
       setTicket(result.id); await pollBackend();
-    } catch { setError('The complaint could not be submitted. Please try again.'); }
+    } catch (caught) {
+      const detail = (caught as { response?: { data?: { detail?: { code?: string; original_id?: number; feed_url?: string } } } }).response?.data?.detail;
+      if (detail?.code === 'duplicate_complaint' && detail.feed_url) {
+        setError(`A similar complaint already exists. Open the original report in the Community feed to like, comment, or share it.`);
+        const feedUrl = new URL(detail.feed_url, window.location.origin);
+        window.history.pushState({}, '', `${feedUrl.pathname}${feedUrl.search}`);
+        onNavigate?.('community');
+      } else setError('The complaint could not be submitted. Please try again.');
+    }
     finally { setSubmitting(false); }
   };
   const myComplaints = complaints.filter(item => item.citizenId === user?.id);
@@ -104,22 +119,22 @@ export const CitizenPortal: React.FC<{ onNavigate?: (tab: string) => void; onOpe
         {preview ? <DetectionPreview src={preview} locating={locating} scanning={scanning} detections={analysis?.detections} /> : <button className="photo-placeholder" onClick={() => photoInput.current?.click()}><span className="upload-art"><UploadCloud /></span><strong>A clearer picture. A faster response.</strong><span>Choose a photo <span aria-hidden="true">↗</span></span><small>Use a clear, well-lit image of the civic issue.</small><span className="upload-categories">Roads · Waste · Water · Street lighting</span></button>}
         {preview && <button className="work-secondary" disabled={busy} onClick={() => photoInput.current?.click()}>Change photo</button>}
         <div className="description-heading"><label htmlFor="citizen-description">Description</label><button className="work-secondary" disabled={!analysis || busy || !location?.district || !location?.ward || analysis.category === 'None'} onClick={generateDescription}><Sparkles />Generate with AI</button></div>
-        <textarea id="citizen-description" value={description} onChange={event => setDescription(event.target.value)} placeholder="Describe the issue, or click Generate with AI." rows={8} />
+        <textarea id="citizen-description" value={description} onChange={event => setDescription(event.target.value)} placeholder={analysis && (analysis.category === 'None' || analysis.confidence < 0.30) ? 'The image is unclear. Describe the issue before detecting the location.' : 'Describe the issue, or click Generate with AI.'} rows={8} />
       </section>
       <section className="work-card report-review"><div className="work-card-title"><div><span className="section-kicker">REPORT DETAILS</span><h2>Location and review</h2></div><MapPin /></div>
         {!location && !locating && <div className="location-placeholder"><MapPin /><strong>Put the issue on the map</strong><p>Your device location is captured when you add a photo. You can confirm the place name before sending.</p></div>}
         <div className="report-location" aria-live="polite"><MapPin /><div><strong>{locating ? 'Detecting your location…' : location?.place || (location?.ward ? location.ward + ', ' + location.district : 'Location not yet confirmed')}</strong>
           {location && <><p className="coordinates">{location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}</p><small>Device accuracy: approximately {Math.round(location.accuracy || 0)} m</small></>}</div></div>
-        <button className="work-secondary" onClick={() => void detectLocation()} disabled={busy}><MapPin />{locating ? 'Detecting…' : 'Detect location'}</button>
+        <button className="work-secondary" onClick={() => void detectLocation()} disabled={busy || (!!analysis && (analysis.category === 'None' || analysis.confidence < 0.30) && !description.trim())}><MapPin />{locating ? 'Detecting…' : 'Detect location'}</button>
         {locationError && <p role="status" className="work-warning">{locationError}</p>}
         {location && <div className="work-form-grid"><label>Place / locality<input value={location.ward} onChange={event => { setLocation({ ...location, ward: event.target.value, place: '' }); setDescription(''); }} /></label><label>District<input value={location.district} onChange={event => { setLocation({ ...location, district: event.target.value, place: '' }); setDescription(''); }} /></label></div>}
         <p className="work-muted">Confirm this is where the incident occurred. Place names © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>.</p>
         {scanning && <p className="work-notice" role="status">Detecting issue… Please keep this page open.</p>}
-        {analysis && <div className={'detected-issue ' + (analysis.category === 'None' ? 'no-detection' : '')} role="status"><span className="section-kicker">DETECTED ISSUE · CLIP SUGGESTION</span><div><IssueIcon category={analysis.category} /><h2>{analysis.category === 'None' ? 'Unable to identify an issue confidently' : analysis.category}</h2></div><p>{analysis.category === 'None' ? 'Try a clearer, closer photo showing the damage or waste.' : analysis.severity + ' priority · officer verification required'}</p><small>{analysis.detections?.length ? 'The green outline is an approximate CLIP matching region, not an exact object boundary.' : 'No reliable area could be highlighted for this photo.'}</small></div>}
+        {analysis && <div className={'detected-issue ' + (analysis.category === 'None' || analysis.confidence < 0.30 ? 'no-detection' : '')} role="status"><span className="section-kicker">DETECTED ISSUE · CLIP SUGGESTION</span><div><IssueIcon category={analysis.category} /><h2>{analysis.category === 'None' || analysis.confidence < 0.30 ? 'Describe the issue to continue' : analysis.category}</h2></div><p>{analysis.category === 'None' || analysis.confidence < 0.30 ? 'The image confidence is too low to classify this report. Enter a description before detecting the location.' : analysis.severity + ' priority · officer verification required'}</p><small>{analysis.detections?.length ? 'The green outline is an approximate CLIP matching region, not an exact object boundary.' : 'No reliable area could be highlighted for this photo.'}</small></div>}
         {analysis && analysis.category !== 'None' && <dl className="work-details"><div><dt>Suggested issue</dt><dd>{analysis.category}</dd></div><div><dt>Priority</dt><dd>{analysis.severity}</dd></div><div><dt>Department</dt><dd>{analysis.department?.name}</dd></div><div><dt>Relative model match</dt><dd>{Math.round(analysis.confidence * 100)}%<small>Not a probability of correctness</small></dd></div></dl>}
         {error && <p className="work-error" role="alert">{error}</p>}
         {photo && location && !analysis && !busy && <button className="work-secondary" onClick={() => void scan(photo, location, generation.current)}>Retry scan</button>}
-        <button className="work-primary work-submit" disabled={busy || !analysis || analysis.category === 'None' || !location?.district.trim() || !location?.ward.trim()} onClick={() => void submit()}>{submitting ? 'Submitting…' : 'Submit complaint'}</button>
+        <button className="work-primary work-submit" disabled={busy || !analysis || ((analysis.category === 'None' || analysis.confidence < 0.30) && !description.trim()) || !location?.district.trim() || !location?.ward.trim()} onClick={() => void submit()}>{submitting ? 'Submitting…' : 'Submit complaint'}</button>
       </section>
     </div>}
     <section className="work-card citizen-tracking" id="my-reports"><div className="work-card-title"><div><span className="section-kicker">YOUR REPORTS, IN ONE PLACE</span><h2>My complaints</h2></div><span className="work-count">{myComplaints.length} reports</span></div>

@@ -1,12 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'leaflet/dist/leaflet.css';
+@import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../tailwind.config.js";
 
 @layer base {
   body {
@@ -351,7 +348,7 @@
 @media (max-width: 960px) { .civic-hero { grid-template-columns: 1fr; padding: 2rem; }.civic-hero__visual { min-height: 360px; max-width: 650px; width: 100%; margin: 0 auto; }.civic-how-section { grid-template-columns: 1fr; }.civic-how-section__intro > span { max-width: 600px; }.gov-nav { display: none; } }
 @media (max-width: 680px) { .gov-shell { width: min(100% - 1.5rem, 1440px); }.gov-utility-bar .gov-shell { min-height: 1.8rem; }.gov-header__content { min-height: 4.25rem; }.gov-footer__content { flex-wrap: wrap; padding: 1rem 0; }.gov-footer__links { order: 3; width: 100%; }.gov-footer__copyright { margin-left: auto; }.gov-main__content { padding-top: 1.3rem; }.civic-home { gap: 3rem; }.civic-hero { min-height: auto; padding: 1.5rem; border-radius: 1rem; }.civic-hero h1 { font-size: 2.4rem; }.civic-hero__visual { min-height: 290px; }.civic-report-preview { right: -.15rem; }.civic-service-grid,.civic-steps { grid-template-columns: 1fr; }.civic-section-heading { align-items: flex-start; flex-direction: column; }.civic-service-card p { min-height: auto; }.civic-how-section { gap: 1.5rem; padding: 2rem 0; }.civic-access-banner { align-items: flex-start; flex-wrap: wrap; padding: 1.25rem; }.civic-access-banner button { margin-left: 0; }.gov-whatsapp { right: .75rem; bottom: .75rem; }.gov-whatsapp span { display: none; } }
 
-/* CiviTrack color-forward neo-modern role gateway + field console */
+/* FixMyCity color-forward neo-modern role gateway + field console */
 :root {
   --ct-bg: #0b0f19;
   --ct-panel: rgba(255, 255, 255, .045);

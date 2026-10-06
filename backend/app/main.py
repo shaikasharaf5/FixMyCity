@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Request, Query, Depends
+from fastapi import FastAPI, Request, Query, Depends, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -188,6 +188,11 @@ def read_root():
         "version": "1.0.0",
         "documentation": "/docs"
     }
+
+@app.post("/", response_class=Response)
+async def receive_twilio_root(request: Request, db: Session = Depends(get_db)):
+    """Accept older Twilio configurations that point at the ngrok root URL."""
+    return await twilio_whatsapp.receive_twilio_whatsapp(request, db)
 
 @app.get("/webhook")
 async def verify_webhook_root(

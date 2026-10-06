@@ -61,6 +61,7 @@ class Complaint(Base):
     # Duplicate merging
     duplicate_of_id = Column(Integer, ForeignKey("complaints.id"), nullable=True)
     upvotes = Column(Integer, default=1)
+    share_count = Column(Integer, default=0, nullable=False)
     
     before_image_url = Column(String, nullable=False)
     verified_image_url = Column(String, nullable=True)
@@ -82,6 +83,23 @@ class Complaint(Base):
     
     # Recursive relationship for duplicates
     duplicates = relationship("Complaint", backref="duplicate_of", remote_side=[id])
+
+class ComplaintLike(Base):
+    __tablename__ = "complaint_likes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    complaint_id = Column(Integer, ForeignKey("complaints.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ComplaintComment(Base):
+    __tablename__ = "complaint_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    complaint_id = Column(Integer, ForeignKey("complaints.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class Notification(Base):
     __tablename__ = "notifications"

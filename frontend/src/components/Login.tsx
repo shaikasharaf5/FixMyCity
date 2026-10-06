@@ -84,7 +84,7 @@ export const Login: React.FC<{ onSwitchToRegister: () => void }> = ({ onSwitchTo
       const data = await response.json();
       login(data.access_token, data.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to connect to CiviTrack services.');
+      setError(err instanceof Error ? err.message : 'Unable to connect to FixMyCity services.');
     } finally {
       setLoadingRole(null);
     }
@@ -114,7 +114,7 @@ export const Login: React.FC<{ onSwitchToRegister: () => void }> = ({ onSwitchTo
       >
         <div className="role-gateway__seal"><Building2 /><span><i />Government service gateway</span></div>
         <div className="role-gateway__eyebrow"><Sparkles /> One city. Three purpose-built workspaces.</div>
-        <h1 id="gateway-title">Enter the <span>CiviTrack</span> network</h1>
+        <h1 id="gateway-title">Enter the <span>FixMyCity</span> network</h1>
         <p>Select a demo identity to securely open its dedicated dashboard. Every role has different tools, data and actions.</p>
       </motion.header>
 

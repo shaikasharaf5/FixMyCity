@@ -1,4 +1,5 @@
 import json
+import asyncio
 import logging
 import mimetypes
 import os
@@ -6,16 +7,18 @@ import re
 import uuid
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlsplit
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from PIL import Image
 from sqlalchemy.orm import Session
+from starlette.requests import ClientDisconnect
 from twilio.request_validator import RequestValidator
 from twilio.twiml.messaging_response import MessagingResponse
 
 from .. import crud, models, schemas
-from ..ai import detector, generator
+from ..ai import detector, duplicates, generator
 from ..database import get_db
 from .ws import manager
 
@@ -26,6 +29,7 @@ UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 MAX_IMAGE_BYTES = 12 * 1024 * 1024
 SUPPORTED_IMAGES = {"image/jpeg", "image/png", "image/webp"}
+LOW_CONFIDENCE_THRESHOLD = 0.30
 
 
 def _clean_phone(value: str) -> str:
@@ -42,6 +46,10 @@ def _webhook_url(request: Request) -> str:
     # Use the exact public URL configured in Twilio when a reverse proxy rewrites host/scheme.
     configured = os.getenv("TWILIO_WEBHOOK_URL")
     if configured:
+        configured_parts = urlsplit(configured)
+        if configured_parts.path and configured_parts.path != request.url.path:
+            query = f"?{request.url.query}" if request.url.query else ""
+            return f"{configured_parts.scheme}://{configured_parts.netloc}{request.url.path}{query}"
         return configured
     public_base = os.getenv("NGROK_URL")
     if public_base:
@@ -124,17 +132,24 @@ async def _download_twilio_image(media_url: str, declared_type: str) -> tuple[st
 
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=25) as client:
-            async with client.stream("GET", media_url, auth=(account_sid, auth_token)) as response:
-                response.raise_for_status()
-                actual_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
-                if actual_type and actual_type not in SUPPORTED_IMAGES:
-                    raise ValueError("Twilio media is not a supported photo")
-                with file_path.open("wb") as output:
-                    async for chunk in response.aiter_bytes():
-                        total += len(chunk)
-                        if total > MAX_IMAGE_BYTES:
-                            raise ValueError("Photo exceeds the 12 MB processing limit")
-                        output.write(chunk)
+            for attempt in range(3):
+                try:
+                    async with client.stream("GET", media_url, auth=(account_sid, auth_token)) as response:
+                        response.raise_for_status()
+                        actual_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
+                        if actual_type and actual_type not in SUPPORTED_IMAGES:
+                            raise ValueError("Twilio media is not a supported photo")
+                        with file_path.open("wb") as output:
+                            async for chunk in response.aiter_bytes():
+                                total += len(chunk)
+                                if total > MAX_IMAGE_BYTES:
+                                    raise ValueError("Photo exceeds the 12 MB processing limit")
+                                output.write(chunk)
+                    break
+                except httpx.ConnectError:
+                    if attempt == 2:
+                        raise
+                    await asyncio.sleep(1)
         if total == 0:
             raise ValueError("Twilio returned an empty media file")
         return f"/uploads/{filename}", file_path
@@ -167,7 +182,7 @@ async def _create_complaint(db: Session, phone: str, image_url: str, draft: dict
         department = crud.create_department(db, schemas.DepartmentCreate(name=department_name, code=code))
 
     citizen = db.query(models.User).filter(models.User.phone_number == phone).first()
-    description = generator.generate_complaint_description(
+    description = draft.get("user_description") or generator.generate_complaint_description(
         category=category,
         severity=severity,
         district=location["district"],
@@ -225,11 +240,25 @@ def _success_message(complaint: models.Complaint) -> str:
         "The Central Room can now review and assign an officer."
     )
 
+def _public_feed_url(complaint_id: int) -> str:
+    configured = os.getenv("WEBSITE_URL", "").strip().rstrip("/")
+    if not configured or "your-civitrack-domain.example" in configured:
+        webhook = os.getenv("TWILIO_WEBHOOK_URL", "")
+        configured = webhook.split("/api/", 1)[0].rstrip("/") or "http://localhost:5173"
+    return f"{configured}/community?complaint={complaint_id}"
+
+def _comparison_description(draft: dict) -> str:
+    return draft.get("user_description") or draft.get("caption") or draft.get("category", "")
+
 
 @router.post("/whatsapp", response_class=Response)
 async def receive_twilio_whatsapp(request: Request, db: Session = Depends(get_db)) -> Response:
     """Receive real Twilio WhatsApp photos and convert them into actionable complaints."""
-    form = await request.form()
+    try:
+        form = await request.form()
+    except ClientDisconnect:
+        logger.warning("Twilio disconnected before the WhatsApp form was fully received")
+        return _reply("We did not receive the complete WhatsApp message. Please resend the photo.")
     _validate_signature(request, form)
 
     phone = _clean_phone(str(form.get("From", "")))
@@ -268,7 +297,32 @@ async def receive_twilio_whatsapp(request: Request, db: Session = Depends(get_db
 
         coords = coords or _extract_exif_gps(image_path)
         draft = {**analysis, "caption": body, "source_message_sid": message_sid}
+        needs_description = analysis["category"] == "Unclassified Civic Issue" or analysis["confidence"] < LOW_CONFIDENCE_THRESHOLD
+        if needs_description:
+            crud.create_or_update_whatsapp_session(
+                db,
+                phone_number=phone,
+                state="awaiting_description",
+                last_image_url=image_url,
+                last_media_id=json.dumps(draft),
+            )
+            _remember_event(db, message_sid, phone, "awaiting_description")
+            return _reply(
+                "I could not identify the issue confidently from this photo. "
+                "Please describe the problem in a message first (for example, 'fallen tree blocking the road'). "
+                "After that, share your WhatsApp location."
+            )
         if coords:
+            duplicate = duplicates.find_duplicate_complaint(
+                db=db, latitude=coords[0], longitude=coords[1], category=draft["category"],
+                description=_comparison_description(draft), max_distance_meters=20.0
+            )
+            if duplicate:
+                return _reply(
+                    f"A similar complaint already exists nearby: CT-{duplicate.id:05d}.\n"
+                    f"Open the original report in the FixMyCity feed: {_public_feed_url(duplicate.id)}\n"
+                    "You can like, comment, or share the original report instead."
+                )
             complaint = await _create_complaint(db, phone, image_url, draft, *coords)
             _remember_event(db, message_sid, phone, "complaint_created", complaint.id)
             return _reply(_success_message(complaint))
@@ -289,11 +343,36 @@ async def receive_twilio_whatsapp(request: Request, db: Session = Depends(get_db
         )
 
     session = crud.get_whatsapp_session(db, phone_number=phone)
+    if session and session.state == "awaiting_description" and session.last_image_url and body:
+        try:
+            draft = json.loads(session.last_media_id or "{}")
+            draft["user_description"] = body
+            crud.create_or_update_whatsapp_session(
+                db,
+                phone_number=phone,
+                state="awaiting_location",
+                last_image_url=session.last_image_url,
+                last_media_id=json.dumps(draft),
+            )
+            _remember_event(db, message_sid, phone, "awaiting_location")
+            return _reply("Thanks. Now share your current WhatsApp location to register the complaint.")
+        except (ValueError, json.JSONDecodeError):
+            return _reply("I could not save that description. Please send the issue description again.")
     if coords and session and session.state == "awaiting_location" and session.last_image_url:
         try:
             draft = json.loads(session.last_media_id or "{}")
             if not draft.get("category"):
                 raise ValueError("AI draft is missing")
+            duplicate = duplicates.find_duplicate_complaint(
+                db=db, latitude=coords[0], longitude=coords[1], category=draft["category"],
+                description=_comparison_description(draft), max_distance_meters=20.0
+            )
+            if duplicate:
+                return _reply(
+                    f"A similar complaint already exists nearby: CT-{duplicate.id:05d}.\n"
+                    f"Open the original report in the FixMyCity feed: {_public_feed_url(duplicate.id)}\n"
+                    "You can like, comment, or share the original report instead."
+                )
             complaint = await _create_complaint(db, phone, session.last_image_url, draft, *coords)
             _remember_event(db, message_sid, phone, "complaint_created", complaint.id)
             crud.create_or_update_whatsapp_session(db, phone, "idle", "", "")

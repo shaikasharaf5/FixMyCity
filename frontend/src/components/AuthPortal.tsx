@@ -111,7 +111,7 @@ export const AuthPortal: React.FC = () => {
           <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-50 border border-slate-200 mb-3.5 shadow-sm">
             <Building2 className="w-5 h-5 text-indigo-600" />
           </div>
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight uppercase">CiviTrack Portal</h2>
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight uppercase">FixMyCity Portal</h2>
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">
             District Infrastructure &amp; Reporting Dashboard
           </p>

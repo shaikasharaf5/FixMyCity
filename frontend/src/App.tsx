@@ -112,12 +112,12 @@ export const App: React.FC = () => {
       <div className="government-app public-app min-h-screen">
         <div className="gov-utility-bar"><div className="gov-shell"><span>Government of Telangana</span><span className="hidden sm:inline">Urban civic services portal</span><span className="ml-auto hidden md:inline">A digital service of municipal administration</span></div></div>
         <header className="gov-header"><div className="gov-shell gov-header__content">
-          <button className="gov-brand" onClick={() => navigate('landing')} aria-label="Go to home"><span className="gov-brand__mark"><Building2 className="h-5 w-5" /></span><span><b>CiviTrack</b><small>Municipal citizen services</small></span></button>
+          <button className="gov-brand" onClick={() => navigate('landing')} aria-label="Go to home"><span className="gov-brand__mark"><Building2 className="h-5 w-5" /></span><span><b>FixMyCity</b><small>Municipal citizen services</small></span></button>
           <nav className="gov-nav hidden lg:flex" aria-label="Main navigation">{publicNav.map((item) => <button key={item.id} onClick={() => navigate(item.id)} className={activeTab === item.id ? 'is-active' : ''}><item.icon className="h-4 w-4" />{item.label}</button>)}</nav>
           <div className="gov-header__actions"><button className="gov-help hidden sm:inline-flex"><CircleHelp className="h-4 w-4" />Help</button><button className="gov-sign-in" onClick={() => navigate('login')}>Sign in</button><button className="gov-mobile-toggle lg:hidden" onClick={() => setIsMobileMenuOpen((open) => !open)} aria-label="Toggle navigation">{isMobileMenuOpen ? <X /> : <Menu />}</button></div>
         </div>{isMobileMenuOpen && <div className="gov-mobile-menu"><div className="gov-shell">{publicNav.map((item) => <button key={item.id} onClick={() => navigate(item.id)} className={activeTab === item.id ? 'is-active' : ''}><item.icon className="h-4 w-4" />{item.label}</button>)}</div></div>}</header>
         <main className="gov-main"><div className="gov-shell gov-main__content">{renderContent()}</div></main>
-        <footer className="gov-footer"><div className="gov-shell gov-footer__content"><div className="gov-footer__identity"><Building2 className="h-5 w-5" /><span><b>CiviTrack</b><small>Official municipal citizen-service platform</small></span></div><div className="gov-footer__links"><span>Privacy</span><span>Accessibility</span><span>Service status</span></div><span className="gov-footer__copyright">© 2026 Municipal Civic Services</span></div></footer>
+        <footer className="gov-footer"><div className="gov-shell gov-footer__content"><div className="gov-footer__identity"><Building2 className="h-5 w-5" /><span><b>FixMyCity</b><small>Official municipal citizen-service platform</small></span></div><div className="gov-footer__links"><span>Privacy</span><span>Accessibility</span><span>Service status</span></div><span className="gov-footer__copyright">© 2026 Municipal Civic Services</span></div></footer>
       </div>
     );
   }
@@ -127,7 +127,7 @@ export const App: React.FC = () => {
       {isMobileMenuOpen && <button className="portal-sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} aria-label="Close menu" />}
       <aside className={`portal-sidebar ${isMobileMenuOpen ? 'is-mobile-open' : ''}`}>
         <div className="portal-sidebar__brand">
-          <button onClick={() => navigate(currentNav[0].id)} aria-label="Open dashboard"><span><Building2 /></span><div><b>CiviTrack</b><small>Municipal citizen services</small></div></button>
+          <button onClick={() => navigate(currentNav[0].id)} aria-label="Open dashboard"><span><Building2 /></span><div><b>FixMyCity</b><small>Municipal citizen services</small></div></button>
           <button className="portal-sidebar__collapse" onClick={() => setSidebarCollapsed((value) => !value)} aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}>{sidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}</button>
           <button className="portal-sidebar__mobile-close" onClick={() => setIsMobileMenuOpen(false)} aria-label="Close navigation"><X /></button>
         </div>
@@ -148,7 +148,7 @@ export const App: React.FC = () => {
           <div className="portal-topbar__actions"><span className="workspace-date"><CalendarDays />{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span><details className="workspace-help"><summary aria-label="Workspace guide"><CircleHelp /></summary><div><b>Your workspace guide</b><p>{isCentralRoom ? 'Filter by district, select a report from the map or register, then assign the responsible officer.' : isFieldOfficer ? 'Open an assigned complaint, review the location, and submit your work notes. Add an after-work photo to resolve it.' : 'Add a photo and allow location access. Review the detected issue, optionally generate a description, then submit your report.'}</p></div></details><span className="topbar-avatar" title={user.username}>{user.username.slice(0, 1).toUpperCase()}</span></div>
         </header>
         <main className="portal-main">{renderContent()}</main>
-        <footer className="portal-footer"><span><Building2 /> CiviTrack · Connected communities</span><span>Better services. Better neighbourhoods.</span></footer>
+        <footer className="portal-footer"><span><Building2 /> FixMyCity · Connected communities</span><span>Better services. Better neighbourhoods.</span></footer>
       </div>
 
       {user.role === 'citizen' && <WhatsAppSimulator isOpen={isWASimulatorOpen} onClose={() => setIsWASimulatorOpen(false)} />}

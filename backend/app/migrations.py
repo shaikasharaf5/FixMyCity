@@ -4,7 +4,7 @@ from sqlalchemy import inspect, text
 def upgrade_complaint_workflow(engine):
     columns = {column['name'] for column in inspect(engine).get_columns('complaints')}
     additions = {'verification_outcome': 'VARCHAR', 'verification_notes': 'TEXT',
-                 'verified_at': 'DATETIME', 'proceeded_at': 'DATETIME'}
+                 'verified_at': 'DATETIME', 'proceeded_at': 'DATETIME', 'share_count': 'INTEGER NOT NULL DEFAULT 0'}
     with engine.begin() as connection:
         for name, sql_type in additions.items():
             if name not in columns:

@@ -19,7 +19,7 @@ export const WhatsAppSimulator: React.FC<{ isOpen: boolean; onClose: () => void 
     {
       direction: 'outbound',
       phone_number: 'system',
-      text: '🤖 *CiviTrack WhatsApp Bot Active*\nSend "Hi" to start interacting or reporting an issue!',
+      text: '🤖 *FixMyCity WhatsApp Bot Active*\nSend "Hi" to start interacting or reporting an issue!',
       timestamp: Date.now() / 1000
     }
   ]);
@@ -188,7 +188,7 @@ export const WhatsAppSimulator: React.FC<{ isOpen: boolean; onClose: () => void 
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-white font-semibold text-sm">CiviTrack Bot</h3>
+            <h3 className="text-white font-semibold text-sm">FixMyCity Bot</h3>
             <p className="text-xs text-[#00a884]">Online (Simulator)</p>
           </div>
         </div>

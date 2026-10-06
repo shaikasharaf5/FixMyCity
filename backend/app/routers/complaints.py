@@ -82,10 +82,10 @@ async def update_whatsapp_config(payload: dict):
 @router.post("/analyze")
 async def analyze_uploaded_image(
     file: UploadFile = File(...),
-    latitude: float = Form(...),
-    longitude: float = Form(...),
-    district: str = Form(...),
-    ward: str = Form(...),
+    latitude: Optional[float] = Form(None),
+    longitude: Optional[float] = Form(None),
+    district: str = Form(""),
+    ward: str = Form(""),
     db: Session = Depends(get_db)
 ):
     """
@@ -136,23 +136,24 @@ async def analyze_uploaded_image(
     ai_description = generator.generate_complaint_description(
         category=category,
         severity=severity,
-        district=district,
-        ward=ward,
-        latitude=latitude,
-        longitude=longitude,
+        district=district or "the reported area",
+        ward=ward or "the reported area",
+        latitude=latitude or 0,
+        longitude=longitude or 0,
         department=dept_name
-    ) if category != "None" else ""
+    ) if category != "None" and latitude is not None and longitude is not None else ""
     
     # Check for Duplicate Complaints within 50 meters
     duplicate_warning = False
     duplicate_details = None
     existing_dup = duplicates.find_duplicate_complaint(
-        db=db, 
-        latitude=latitude, 
-        longitude=longitude, 
-        category=category, 
-        max_distance_meters=50.0
-    )
+        db=db,
+        latitude=latitude,
+        longitude=longitude,
+        category=category,
+        description=ai_description,
+        max_distance_meters=20.0
+    ) if latitude is not None and longitude is not None else None
     
     if existing_dup:
         duplicate_warning = True
@@ -223,6 +224,25 @@ async def file_complaint(
             latitude=complaint_in.latitude,
             longitude=complaint_in.longitude,
             department=dept_name
+        )
+
+    duplicate = duplicates.find_duplicate_complaint(
+        db=db,
+        latitude=complaint_in.latitude,
+        longitude=complaint_in.longitude,
+        category=complaint_in.category,
+        description=description,
+        max_distance_meters=20.0,
+    )
+    if duplicate:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "duplicate_complaint",
+                "message": "A similar complaint already exists nearby.",
+                "original_id": duplicate.id,
+                "feed_url": f"/community?complaint={duplicate.id}",
+            },
         )
         
     db_complaint = crud.create_complaint(

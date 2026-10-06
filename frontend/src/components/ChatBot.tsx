@@ -12,7 +12,7 @@ const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "bot",
-      content: "Hello! I am **CiviTrack AI**, your smart municipal assistant. 🤖\n\nHow can I help you today? You can ask me to search, count, or detail complaints across Telangana. For example:\n- *\"Show water leakage in Hyderabad\"*\n- *\"How many issues are resolved?\"*\n- *\"Show details for complaint #57\"*"
+      content: "Hello! I am **FixMyCity AI**, your smart municipal assistant. 🤖\n\nHow can I help you today? You can ask me to search, count, or detail complaints across Telangana. For example:\n- *\"Show water leakage in Hyderabad\"*\n- *\"How many issues are resolved?\"*\n- *\"Show details for complaint #57\"*"
     }
   ]);
   const [input, setInput] = useState("");
@@ -261,7 +261,7 @@ const ChatBot: React.FC = () => {
       <button
         onClick={() => setOpen((prev) => !prev)}
         className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:scale-105 hover:shadow-xl transition transform border border-blue-400/30"
-        title="Chat with CiviTrack"
+        title="Chat with FixMyCity"
       >
         <Send className="w-6 h-6" />
       </button>
@@ -284,7 +284,7 @@ const ChatBot: React.FC = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-400"></span>
               </span>
-              <span className="font-extrabold tracking-wider text-xs uppercase text-slate-200">CiviTrack AI Assistant</span>
+              <span className="font-extrabold tracking-wider text-xs uppercase text-slate-200">FixMyCity AI Assistant</span>
             </div>
             <button onClick={() => setOpen(false)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
               <X className="w-4 h-4 text-slate-400 hover:text-white" />

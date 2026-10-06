@@ -113,6 +113,33 @@ class ComplaintOut(BaseModel):
     class Config:
         from_attributes = True
 
+class ComplaintFeedComment(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    content: str
+    created_at: datetime
+
+class ComplaintFeedItem(BaseModel):
+    id: int
+    category: str
+    severity: str
+    description: str
+    district: str
+    ward: str
+    status: str
+    before_image_url: str
+    created_at: datetime
+    author: str
+    like_count: int
+    comment_count: int
+    share_count: int
+    liked_by_me: bool
+    comments: List[ComplaintFeedComment]
+
+class ComplaintCommentCreate(BaseModel):
+    content: str
+
 # --- Notification Schemas ---
 class NotificationOut(BaseModel):
     id: int

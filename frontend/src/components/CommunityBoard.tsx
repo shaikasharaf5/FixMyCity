@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Users, AlertCircle, Heart, Search, Upload, Plus, X, Image as ImageIcon, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { api } from '../lib/apiClient';
 import { useAuth } from '../contexts/AuthContext';
+import ComplaintSocialFeed from './ComplaintSocialFeed';
 
 interface CommunityPost {
   id: number;
@@ -224,6 +225,8 @@ export const CommunityBoard: React.FC = () => {
            </form>
         </div>
       )}
+
+      <ComplaintSocialFeed />
 
       {/* --- Officer/Admin Pending Alerts Section --- */}
       {isOfficerOrAdmin && (

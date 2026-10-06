@@ -4,6 +4,7 @@ import shutil
 import logging
 import re
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
@@ -18,6 +19,76 @@ router = APIRouter(prefix="/api/community", tags=["Community Board"])
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+def _feed_item(complaint, db: Session, user_id: int) -> schemas.ComplaintFeedItem:
+    likes = db.query(models.ComplaintLike).filter(models.ComplaintLike.complaint_id == complaint.id).all()
+    comments = (
+        db.query(models.ComplaintComment, models.User.username)
+        .join(models.User, models.User.id == models.ComplaintComment.user_id)
+        .filter(models.ComplaintComment.complaint_id == complaint.id)
+        .order_by(models.ComplaintComment.created_at.asc())
+        .all()
+    )
+    return schemas.ComplaintFeedItem(
+        id=complaint.id,
+        category=complaint.category,
+        severity=complaint.severity,
+        description=complaint.description,
+        district=complaint.district,
+        ward=complaint.ward,
+        status=complaint.status,
+        before_image_url=complaint.before_image_url,
+        created_at=complaint.created_at,
+        author=complaint.citizen.username if complaint.citizen else "CiviTrack citizen",
+        like_count=len(likes),
+        comment_count=len(comments),
+        share_count=getattr(complaint, "share_count", 0) or 0,
+        liked_by_me=any(like.user_id == user_id for like in likes),
+        comments=[schemas.ComplaintFeedComment(id=comment.id, user_id=comment.user_id, username=username, content=comment.content, created_at=comment.created_at) for comment, username in comments],
+    )
+
+@router.get("/complaints-feed", response_model=List[schemas.ComplaintFeedItem])
+def get_complaints_feed(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    complaints = db.query(models.Complaint).order_by(models.Complaint.created_at.desc()).limit(100).all()
+    return [_feed_item(complaint, db, current_user.id) for complaint in complaints]
+
+@router.post("/complaints/{complaint_id}/like")
+def toggle_complaint_like(complaint_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    complaint = db.query(models.Complaint).filter(models.Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(404, "Complaint not found")
+    like = db.query(models.ComplaintLike).filter_by(complaint_id=complaint_id, user_id=current_user.id).first()
+    if like:
+        db.delete(like)
+        liked = False
+    else:
+        db.add(models.ComplaintLike(complaint_id=complaint_id, user_id=current_user.id))
+        liked = True
+    db.commit()
+    count = db.query(func.count(models.ComplaintLike.id)).filter_by(complaint_id=complaint_id).scalar()
+    return {"liked": liked, "like_count": count}
+
+@router.post("/complaints/{complaint_id}/comments", response_model=schemas.ComplaintFeedComment)
+def comment_on_complaint(complaint_id: int, comment_in: schemas.ComplaintCommentCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    if not comment_in.content.strip():
+        raise HTTPException(400, "Comment cannot be empty")
+    complaint = db.query(models.Complaint).filter(models.Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(404, "Complaint not found")
+    comment = models.ComplaintComment(complaint_id=complaint_id, user_id=current_user.id, content=comment_in.content.strip())
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return schemas.ComplaintFeedComment(id=comment.id, user_id=current_user.id, username=current_user.username, content=comment.content, created_at=comment.created_at)
+
+@router.post("/complaints/{complaint_id}/share")
+def share_complaint(complaint_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    complaint = db.query(models.Complaint).filter(models.Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(404, "Complaint not found")
+    complaint.share_count = (complaint.share_count or 0) + 1
+    db.commit()
+    return {"share_count": complaint.share_count}
 
 # ── Upload ──────────────────────────────────────────────────────────────────
 @router.post("/upload-image")

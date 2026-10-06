@@ -67,7 +67,7 @@ export const Register: React.FC<{ onSwitchToLogin: () => void }> = ({ onSwitchTo
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <h2 className="text-2xl font-bold text-center text-white mb-2 relative z-10">Create Account</h2>
-        <p className="text-center text-slate-400 text-sm mb-6 relative z-10">Join the CiviTrack AI network</p>
+        <p className="text-center text-slate-400 text-sm mb-6 relative z-10">Join the FixMyCity AI network</p>
 
         {error && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded text-red-400 text-sm text-center font-semibold">{error}</div>}
 
